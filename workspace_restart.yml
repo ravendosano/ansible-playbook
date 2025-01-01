@@ -1,0 +1,9 @@
+--
+- name: Run Custom Script
+  hosts: all
+  become: yes
+
+tasks:
+   - name: Execute the script
+     shell: /home/appsupport/aws_restart/test3.sh
+     register: script_output     
