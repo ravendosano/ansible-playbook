@@ -1,0 +1,22 @@
+---
+- name: Restart SSH Service
+  hosts: all
+  become: yes  # This enables sudo privileges
+  
+  tasks:
+    - name: Restart sshd service on Debian/Ubuntu
+      service:
+        name: ssh
+        state: restarted
+      when: ansible_os_family == "Debian"
+      
+    - name: Restart sshd service on RedHat/CentOS
+      service:
+        name: sshd
+        state: restarted
+      when: ansible_os_family == "RedHat"
+      
+    - name: Verify SSH service is running
+      service:
+        name: "{{ 'ssh' if ansible_os_family == 'Debian' else 'sshd' }}"
+        state: started
