@@ -1,9 +1,12 @@
---
 - name: Run Custom Script
   hosts: all
   become: yes
+  tasks:
+    - name: Execute the script
+      ansible.builtin.shell: /home/appsupport/aws_restart/test3.sh
+      register: script_output
+      ignore_errors: yes  # Optionally ignore errors to proceed even if the script fails
 
-tasks:
-   - name: Execute the script
-     shell: /home/appsupport/aws_restart/test3.sh
-     register: script_output     
+    - name: Show script output
+      debug:
+        var: script_output
