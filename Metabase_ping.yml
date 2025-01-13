@@ -1,0 +1,7 @@
+---
+- name: Simple Ping Pong Test Playbook
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Ping the remote host
+      ansible.builtin.ping:

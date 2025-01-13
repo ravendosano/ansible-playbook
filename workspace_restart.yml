@@ -5,7 +5,6 @@
     - name: Execute the script
       ansible.builtin.shell: /home/appsupport/aws_restart/test3.sh
       register: script_output
-      ignore_errors: yes  # Optionally ignore errors to proceed even if the script fails
 
     - name: Show script output
       debug:
