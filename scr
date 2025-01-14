@@ -2,6 +2,7 @@ import imaplib
 import email
 import requests
 from datetime import datetime, timedelta
+import time
 
 class EmailMonitor:
     def __init__(self, email_address, email_password, webhook_url):
@@ -54,11 +55,12 @@ class EmailMonitor:
             
             # Search criteria to find emails between the last 20 minutes
             search_criteria = f'(SINCE "{twenty_minutes_ago_str}" BEFORE "{now_str}")'
-            print(f"Searching emails with criteria: {search_criteria}")  # Debugging line
+            print(f"DEBUG: Searching emails with criteria: {search_criteria}")  # Debugging line
             
             _, message_numbers = mail.search(None, search_criteria)
             
             if not message_numbers[0]:
+                print("DEBUG: No emails found in the last 20 minutes.")  # Debugging line
                 return "no_emails", None
             
             found_success = set()
@@ -69,25 +71,31 @@ class EmailMonitor:
                 email_body = msg_data[0][1]
                 message = email.message_from_bytes(email_body)
                 subject = message["subject"]
-                print(f"Found email with subject: {subject}")  # Debugging line
+                
+                print(f"DEBUG: Processing email with subject: {subject}")  # Debugging line
                 
                 if subject in self.success_subjects:
                     found_success.add(subject)
+                    print(f"DEBUG: Found success subject: {subject}")  # Debugging line
                 elif subject in self.failure_subjects:
                     found_failure.add(subject)
+                    print(f"DEBUG: Found failure subject: {subject}")  # Debugging line
                     # Get email body for error details
                     error_message = self.get_email_body(message)
-                    print(f"Failure detected with email body: {error_message}")  # Debugging line
+                    print(f"DEBUG: Failure email body: {error_message}")  # Debugging line
                     return "failure", error_message
             
             mail.logout()
             
             # Check if both success subjects are found and no failure subjects
             if len(found_success) == len(self.success_subjects):
+                print(f"DEBUG: All success subjects found: {found_success}")  # Debugging line
                 return "success", None
             elif found_failure:
+                print(f"DEBUG: Found failure subjects: {found_failure}")  # Debugging line
                 return "failure", None
             else:
+                print("DEBUG: Waiting for all required success emails.")  # Debugging line
                 return "waiting", None
             
         except Exception as e:
@@ -112,8 +120,8 @@ def main():
     
     monitor = EmailMonitor(EMAIL_ADDRESS, EMAIL_PASSWORD, WEBHOOK_URL)
 
-    # Check for emails in the last 20 minutes once
-    print("Checking for emails in the last 20 minutes...")
+    # Start checking for emails from the last 20 minutes once
+    print("\nDEBUG: Starting to check for emails in the last 20 minutes...")
     status, error_details = monitor.check_emails()
     
     if status == "success":
@@ -121,19 +129,19 @@ def main():
         # Send success notification as a simple message
         message = "✅ Daily Report: Successfully generated and uploaded to SFTP server."
         monitor.send_webhook(message)
-        
+    
     elif status == "failure":
         print("Failure detected in report processing.")
         # Send failure notification as a simple message
         message = f"❌ Daily Report: Failed\nError Details: {error_details if error_details else 'Check email for details.'}"
         monitor.send_webhook(message)
-        
+    
     elif status == "no_emails":
         print("No emails found in the last 20 minutes.")
         # Send notification that no email was found using a simple message
         message = "⚠️ No required report emails received in the last 20 minutes."
         monitor.send_webhook(message)
-        
+    
     else:  # error
         print(f"Error checking emails: {error_details}")
         message = f"⚠️ Error checking emails: {error_details}"
