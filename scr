@@ -24,7 +24,7 @@ class EmailMonitor:
         """Send a simple notification message to Google Chat via webhook"""
         try:
             payload = {
-                "text": message
+                "text": message  # Just a simple text message
             }
             response = requests.post(self.webhook_url, json=payload)
             response.raise_for_status()  # Will raise an exception for HTTP error codes (400, 404, etc.)
@@ -100,7 +100,7 @@ def main():
     # Your credentials
     EMAIL_ADDRESS = "your_email@gmail.com"
     EMAIL_PASSWORD = "your_app_password"
-    WEBHOOK_URL = "your_google_chat_webhook_url"
+    WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/AAAAi7PKnrs/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=Vm39Y1q6nvJQ4aF_sPAwIrV1yHTHfpCoJhOa8odmRAU"
     
     monitor = EmailMonitor(EMAIL_ADDRESS, EMAIL_PASSWORD, WEBHOOK_URL)
 
