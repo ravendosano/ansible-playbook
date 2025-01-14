@@ -63,14 +63,22 @@ class EmailMonitor:
             return False
     
     def check_emails(self):
-        """Check for success or failure emails within the last hour"""
+        """Check for success or failure emails within the last 20 minutes"""
         try:
             mail = imaplib.IMAP4_SSL("imap.gmail.com")
             mail.login(self.email_address, self.email_password)
             mail.select("inbox")
             
-            one_hour_ago = (datetime.now() - timedelta(hours=1)).strftime("%d-%b-%Y")
-            search_criteria = f'(SINCE "{one_hour_ago}")'
+            # Get current time and calculate the 20-minute window
+            now = datetime.now()
+            twenty_minutes_ago = now - timedelta(minutes=20)
+            
+            # Format both current time and 20 minutes ago for IMAP search
+            now_str = now.strftime("%d-%b-%Y %H:%M:%S")
+            twenty_minutes_ago_str = twenty_minutes_ago.strftime("%d-%b-%Y %H:%M:%S")
+            
+            # Search criteria to find emails between the last 20 minutes
+            search_criteria = f'(SINCE "{twenty_minutes_ago_str}" BEFORE "{now_str}")'
             _, message_numbers = mail.search(None, search_criteria)
             
             found_success = set()
@@ -110,91 +118,4 @@ class EmailMonitor:
                 if part.get_content_type() == "text/plain":
                     return part.get_payload(decode=True).decode()
         else:
-            return message.get_payload(decode=True).decode()
-        return "No error details available"
-    
-    def send_notification(self, client_email, status, error_details=None):
-        """Send notification email to client"""
-        try:
-            msg = MIMEMultipart()
-            msg['From'] = self.email_address
-            msg['To'] = client_email
-            
-            if status == "success":
-                msg['Subject'] = "Daily Report Status: Success"
-                body = "The daily report has been successfully generated and uploaded to the SFTP server."
-            else:
-                msg['Subject'] = "Daily Report Status: Failed"
-                body = f"An issue was encountered during report processing.\n\nError Details:\n{error_details}"
-            
-            msg.attach(MIMEText(body, 'plain'))
-            
-            with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                server.starttls()
-                server.login(self.email_address, self.email_password)
-                server.send_message(msg)
-            
-            print("Email notification sent successfully")
-            return True
-            
-        except Exception as e:
-            print(f"Error sending email: {str(e)}")
-            return False
-
-def main():
-    # Your credentials
-    EMAIL_ADDRESS = "your_email@gmail.com"
-    EMAIL_PASSWORD = "your_app_password"
-    CLIENT_EMAIL = "client@example.com"
-    WEBHOOK_URL = "your_google_chat_webhook_url"
-    
-    monitor = EmailMonitor(EMAIL_ADDRESS, EMAIL_PASSWORD, WEBHOOK_URL)
-    
-    start_time = datetime.now()
-    end_time = start_time + timedelta(hours=1)
-    
-    while datetime.now() < end_time:
-        print("Checking for emails...")
-        status, error_details = monitor.check_emails()
-        
-        if status == "success":
-            print("Success! All required emails found.")
-            # Send success notifications
-            monitor.send_notification(CLIENT_EMAIL, "success")
-            monitor.send_webhook(
-                "✅ Daily Report: Successfully generated and uploaded to SFTP server.",
-                is_success=True
-            )
-            break
-            
-        elif status == "failure":
-            print("Failure detected in report processing.")
-            # Send failure notifications
-            monitor.send_notification(CLIENT_EMAIL, "failure", error_details)
-            monitor.send_webhook(
-                f"❌ Daily Report: Failed\n{error_details if error_details else 'Check email for details.'}",
-                is_success=False
-            )
-            break
-            
-        elif status == "waiting":
-            print("Still waiting for all required emails...")
-            time.sleep(300)  # Wait 5 minutes before next check
-            
-        else:  # error
-            print(f"Error checking emails: {error_details}")
-            monitor.send_webhook(
-                f"⚠️ Error monitoring emails: {error_details}",
-                is_success=False
-            )
-            break
-    
-    if status == "waiting":
-        print("One hour timeout reached. Not all required emails were found.")
-        monitor.send_webhook(
-            "⚠️ Timeout: Not all required report emails were received within the monitoring period.",
-            is_success=False
-        )
-
-if __name__ == "__main__":
-    main()
+     
