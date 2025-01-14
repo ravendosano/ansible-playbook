@@ -3,7 +3,7 @@
   become: yes
   tasks:
     - name: Execute Python script
-      ansible.builtin.command: python3 /home/appsupport/batchmonitoring/batch.py
+      ansible.builtin.command: python3 /home/appsupport/batchmonitoring/done3.py
       register: script_output
 
     - name: Show script output
