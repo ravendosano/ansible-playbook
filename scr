@@ -54,7 +54,7 @@ class EmailMonitor:
             
             # Search criteria to find emails between the last 20 minutes
             search_criteria = f'(SINCE "{twenty_minutes_ago_str}" BEFORE "{now_str}")'
-            print(f"Search criteria: {search_criteria}")  # Debugging line to ensure correct format
+            print(f"Searching emails with criteria: {search_criteria}")  # Debugging line
             
             _, message_numbers = mail.search(None, search_criteria)
             
@@ -69,6 +69,7 @@ class EmailMonitor:
                 email_body = msg_data[0][1]
                 message = email.message_from_bytes(email_body)
                 subject = message["subject"]
+                print(f"Found email with subject: {subject}")  # Debugging line
                 
                 if subject in self.success_subjects:
                     found_success.add(subject)
@@ -76,14 +77,16 @@ class EmailMonitor:
                     found_failure.add(subject)
                     # Get email body for error details
                     error_message = self.get_email_body(message)
+                    print(f"Failure detected with email body: {error_message}")  # Debugging line
                     return "failure", error_message
             
             mail.logout()
             
-            if found_failure:
-                return "failure", None
-            elif found_success == set(self.success_subjects):
+            # Check if both success subjects are found and no failure subjects
+            if len(found_success) == len(self.success_subjects):
                 return "success", None
+            elif found_failure:
+                return "failure", None
             else:
                 return "waiting", None
             
