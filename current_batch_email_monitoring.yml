@@ -1,0 +1,11 @@
+- name: Run Python Script
+  hosts: all
+  become: yes
+  tasks:
+    - name: Execute Python script
+      ansible.builtin.command: python3 /home/appsupport/batchmonitoring/batch.py
+      register: script_output
+
+    - name: Show script output
+      debug:
+        var: script_output.stdout_lines
