@@ -1,6 +1,6 @@
 import imaplib
 import email
-import subprocess
+import requests
 from datetime import datetime, timedelta
 
 class EmailMonitor:
@@ -21,18 +21,19 @@ class EmailMonitor:
         ]
     
     def send_webhook(self, message):
-        """Send a JSON message to Google Chat via webhook using curl"""
+        """Send a simple message to Google Chat via webhook"""
         try:
-            # Prepare the curl command to send the JSON payload
-            command = f'curl -sS -X POST -H "Content-Type: application/json" -d "{message}" {self.webhook_url}'
+            payload = {
+                "text": message
+            }
             
-            # Run the curl command
-            response = subprocess.run(command, shell=True, capture_output=True, text=True)
+            # Send the message to the webhook URL
+            response = requests.post(self.webhook_url, json=payload)
             
-            if response.returncode == 0:
+            if response.status_code == 200:
                 print("Webhook notification sent successfully!")
             else:
-                print(f"Error sending webhook: {response.stderr}")
+                print(f"Error sending webhook: {response.status_code} - {response.text}")
         except Exception as e:
             print(f"Error sending webhook: {e}")
     
@@ -114,117 +115,25 @@ def main():
     
     if status == "success":
         print("Success! All required emails found.")
-        # Send success notification using curl
-        message = '''{
-            "cards": [
-                {
-                    "header": {
-                        "title": "Report Status Update"
-                    },
-                    "sections": [
-                        {
-                            "widgets": [
-                                {
-                                    "textParagraph": {
-                                        "text": "✅ Daily Report: Successfully generated and uploaded to SFTP server."
-                                    }
-                                },
-                                {
-                                    "keyValue": {
-                                        "topLabel": "Status",
-                                        "content": "🟢 SUCCESS"
-                                    }
-                                }
-                            ]
-                        }
-                    ],
-                    "name": "Report Status"
-                }
-            ]
-        }'''
+        # Send success notification as a simple message
+        message = "✅ Daily Report: Successfully generated and uploaded to SFTP server."
         monitor.send_webhook(message)
         
     elif status == "failure":
         print("Failure detected in report processing.")
-        # Send failure notification using curl
-        message = f'''{{
-            "cards": [
-                {{
-                    "header": {{
-                        "title": "Report Status Update"
-                    }},
-                    "sections": [
-                        {{
-                            "widgets": [
-                                {{
-                                    "textParagraph": {{
-                                        "text": "❌ Daily Report: Failed\\nError Details: {error_details if error_details else 'Check email for details.'}"
-                                    }}
-                                }},
-                                {{
-                                    "keyValue": {{
-                                        "topLabel": "Status",
-                                        "content": "🔴 FAILED"
-                                    }}
-                                }}
-                            ]
-                        }}
-                    ],
-                    "name": "Report Status"
-                }}
-            ]
-        }}'''
+        # Send failure notification as a simple message
+        message = f"❌ Daily Report: Failed\nError Details: {error_details if error_details else 'Check email for details.'}"
         monitor.send_webhook(message)
         
     elif status == "no_emails":
         print("No emails found in the last 20 minutes.")
-        # Send notification that no email was found using curl
-        message = '''{
-            "cards": [
-                {
-                    "header": {
-                        "title": "Report Status Update"
-                    },
-                    "sections": [
-                        {
-                            "widgets": [
-                                {
-                                    "textParagraph": {
-                                        "text": "⚠️ No required report emails received in the last 20 minutes."
-                                    }
-                                }
-                            ]
-                        }
-                    ],
-                    "name": "Report Status"
-                }
-            ]
-        }'''
+        # Send notification that no email was found using a simple message
+        message = "⚠️ No required report emails received in the last 20 minutes."
         monitor.send_webhook(message)
         
     else:  # error
         print(f"Error checking emails: {error_details}")
-        message = f'''{{
-            "cards": [
-                {{
-                    "header": {{
-                        "title": "Report Status Update"
-                    }},
-                    "sections": [
-                        {{
-                            "widgets": [
-                                {{
-                                    "textParagraph": {{
-                                        "text": "⚠️ Error checking emails: {error_details}"
-                                    }}
-                                }}
-                            ]
-                        }}
-                    ],
-                    "name": "Report Status"
-                }}
-            ]
-        }}'''
+        message = f"⚠️ Error checking emails: {error_details}"
         monitor.send_webhook(message)
 
 if __name__ == "__main__":
