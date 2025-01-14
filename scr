@@ -24,7 +24,7 @@ class EmailMonitor:
         """Send a JSON message to Google Chat via webhook using curl"""
         try:
             # Prepare the curl command to send the JSON payload
-            command = f'curl -sS -X POST -H "Content-Type: application/json" -d \'{message}\' {self.webhook_url}'
+            command = f'curl -sS -X POST -H "Content-Type: application/json" -d "{message}" {self.webhook_url}'
             
             # Run the curl command
             response = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -115,8 +115,7 @@ def main():
     if status == "success":
         print("Success! All required emails found.")
         # Send success notification using curl
-        message = '''
-        {
+        message = '''{
             "cards": [
                 {
                     "header": {
@@ -142,15 +141,13 @@ def main():
                     "name": "Report Status"
                 }
             ]
-        }
-        '''
+        }'''
         monitor.send_webhook(message)
         
     elif status == "failure":
         print("Failure detected in report processing.")
         # Send failure notification using curl
-        message = f'''
-        {{
+        message = f'''{{
             "cards": [
                 {{
                     "header": {{
@@ -176,15 +173,13 @@ def main():
                     "name": "Report Status"
                 }}
             ]
-        }}
-        '''
+        }}'''
         monitor.send_webhook(message)
         
     elif status == "no_emails":
         print("No emails found in the last 20 minutes.")
         # Send notification that no email was found using curl
-        message = '''
-        {
+        message = '''{
             "cards": [
                 {
                     "header": {
@@ -204,14 +199,12 @@ def main():
                     "name": "Report Status"
                 }
             ]
-        }
-        '''
+        }'''
         monitor.send_webhook(message)
         
     else:  # error
         print(f"Error checking emails: {error_details}")
-        message = f'''
-        {{
+        message = f'''{{
             "cards": [
                 {{
                     "header": {{
@@ -231,8 +224,7 @@ def main():
                     "name": "Report Status"
                 }}
             ]
-        }}
-        '''
+        }}'''
         monitor.send_webhook(message)
 
 if __name__ == "__main__":
