@@ -50,6 +50,8 @@ class EmailMonitor:
                 }]
             }
             
+            print(f"Sending Webhook with payload: {json.dumps(payload, indent=4)}")  # Debugging line
+            
             response = requests.post(
                 self.webhook_url,
                 json=payload
@@ -73,12 +75,14 @@ class EmailMonitor:
             now = datetime.now()
             twenty_minutes_ago = now - timedelta(minutes=20)
             
-            # Format both current time and 20 minutes ago for IMAP search
-            now_str = now.strftime("%d-%b-%Y %H:%M:%S")
-            twenty_minutes_ago_str = twenty_minutes_ago.strftime("%d-%b-%Y %H:%M:%S")
+            # Format both current time and 20 minutes ago for IMAP search (to match the format 'DD-Mon-YYYY')
+            now_str = now.strftime("%d-%b-%Y")
+            twenty_minutes_ago_str = twenty_minutes_ago.strftime("%d-%b-%Y")
             
             # Search criteria to find emails between the last 20 minutes
             search_criteria = f'(SINCE "{twenty_minutes_ago_str}" BEFORE "{now_str}")'
+            print(f"Search criteria: {search_criteria}")  # Debugging line to ensure correct format
+            
             _, message_numbers = mail.search(None, search_criteria)
             
             found_success = set()
