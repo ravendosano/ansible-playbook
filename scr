@@ -79,6 +79,9 @@ class EmailMonitor:
             
             _, message_numbers = mail.search(None, search_criteria)
             
+            if not message_numbers[0]:
+                return "no_emails", None
+            
             found_success = set()
             found_failure = set()
             
@@ -118,40 +121,11 @@ class EmailMonitor:
         else:
             return message.get_payload(decode=True).decode()
         return "No error details available"
-    
-    def send_notification(self, client_email, status, error_details=None):
-        """Send notification email to client"""
-        try:
-            msg = MIMEMultipart()
-            msg['From'] = self.email_address
-            msg['To'] = client_email
-            
-            if status == "success":
-                msg['Subject'] = "Daily Report Status: Success"
-                body = "The daily report has been successfully generated and uploaded to the SFTP server."
-            else:
-                msg['Subject'] = "Daily Report Status: Failed"
-                body = f"An issue was encountered during report processing.\n\nError Details:\n{error_details}"
-            
-            msg.attach(MIMEText(body, 'plain'))
-            
-            with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                server.starttls()
-                server.login(self.email_address, self.email_password)
-                server.send_message(msg)
-            
-            print("Email notification sent successfully")
-            return True
-            
-        except Exception as e:
-            print(f"Error sending email: {str(e)}")
-            return False
 
 def main():
     # Your credentials
     EMAIL_ADDRESS = "your_email@gmail.com"
     EMAIL_PASSWORD = "your_app_password"
-    CLIENT_EMAIL = "client@example.com"
     WEBHOOK_URL = "your_google_chat_webhook_url"
     
     monitor = EmailMonitor(EMAIL_ADDRESS, EMAIL_PASSWORD, WEBHOOK_URL)
@@ -162,25 +136,28 @@ def main():
     
     if status == "success":
         print("Success! All required emails found.")
-        # Send success notifications
+        # Send success notification
         monitor.send_webhook(
             "✅ Daily Report: Successfully generated and uploaded to SFTP server.",
             is_success=True
         )
+        
     elif status == "failure":
         print("Failure detected in report processing.")
-        # Send failure notifications
+        # Send failure notification
         monitor.send_webhook(
             f"❌ Daily Report: Failed\n{error_details if error_details else 'Check email for details.'}",
             is_success=False
         )
-    elif status == "waiting":
+        
+    elif status == "no_emails":
         print("No emails found in the last 20 minutes.")
         # Send notification that no email was found
         monitor.send_webhook(
             "⚠️ No required report emails received in the last 20 minutes.",
             is_success=False
         )
+        
     else:  # error
         print(f"Error checking emails: {error_details}")
         monitor.send_webhook(
