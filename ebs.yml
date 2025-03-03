@@ -1,0 +1,11 @@
+- name: Run Custom Script
+  hosts: all
+  become: yes
+  tasks:
+    - name: Execute the script
+      ansible.builtin.shell: /home/appsupport/ebs_daily_logs/ebs.sh
+      register: script_output
+
+    - name: Show script output
+      debug:
+        var: script_output
