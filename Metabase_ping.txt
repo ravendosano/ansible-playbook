@@ -4,4 +4,4 @@
   gather_facts: no
   tasks:
     - name: Ping the remote host
-      ansible.builtin.ping:teteteteeststs
+      ansible.builtin.ping:fsfsfsfsfsfsfsfw
